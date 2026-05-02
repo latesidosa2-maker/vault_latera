@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#1a1a2e;font-family:Arial;display:flex;justify-content:center;align-items:center;min-height:100vh;}
+.calc{background:#0f3460;border-radius:20px;padding:15px;width:100%;max-width:400px;}
+.display{background:#000;border-radius:10px;padding:12px;margin-bottom:10px;text-align:right;}
+.expression{color:#888;font-size:12px;min-height:18px;word-break:break-all;}
+.result{color:#00ff88;font-size:28px;font-weight:bold;word-break:break-all;}
+.buttons{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+button{padding:12px 3px;border:none;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;width:100%;}
+button:active{transform:scale(0.93);}
+.btn-num{background:#1a4a7a;color:white;}
+.btn-op{background:#e94560;color:white;}
+.btn-fn{background:#533483;color:white;font-size:11px;}
+.btn-eq{background:#00ff88;color:#000;font-size:18px;}
+.btn-clr{background:#e94560;color:white;}
+.btn-wide{grid-column:span 2;}
+
+/* OVERLAY */
+.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.97);flex-direction:column;align-items:center;justify-content:center;padding:20px;z-index:100;}
+.overlay.open{display:flex;}
+.overlay h2{color:#00ff88;margin-bottom:15px;font-size:20px;text-align:center;}
+.overlay p{color:#aaa;margin-bottom:15px;text-align:center;font-size:13px;}
+.pin-display{background:#111;border-radius:10px;padding:12px 20px;margin-bottom:15px;letter-spacing:8px;font-size:28px;color:#00ff88;min-width:180px;text-align:center;min-height:55px;}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:260px;}
+.pin-pad button{padding:16px;background:#1a4a7a;color:white;font-size:18px;border:none;border-radius:10px;cursor:pointer;}
+.pin-pad button:active{background:#00ff88;color:#000;}
+.pin-ok{margin-top:12px;padding:12px 35px;background:#00ff88;color:#000;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;}
+.pin-back{margin-top:8px;padding:10px 35px;background:#e94560;color:white;border:none;border-radius:10px;font-size:14px;cursor:pointer;}
+
+/* VAULT */
+.vault{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;flex-direction:column;align-items:center;padding:15px;overflow-y:auto;z-index:100;}
+.vault.open{display:flex;}
+.vault h2{color:#00ff88;margin:15px 0;font-size:20px;}
+.vault-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;margin-bottom:15px;}
+.vault-item{position:relative;}
+.vault-item img,.vault-item video{width:100%;border-radius:8px;display:block;}
+.vault-item .del-btn{position:absolute;top:3px;right:3px;background:rgba(233,69,96,0.9);color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.upload-btn{margin:8px;padding:12px 25px;background:#00ff88;border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;}
+.close-vault-btn{padding:10px 25px;background:#e94560;color:white;border:none;border-radius:10px;font-size:15px;cursor:pointer;margin-top:8px;}
+</style>
+</head>
+<body>
+
+<!-- CALCULATOR -->
+<div class="calc" id="calcView">
+  <div class="display">
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </div>
+  <div class="buttons">
+    <!-- Row 1 -->
+    <button class="btn-fn" onclick="calcFn('sin')">sin</button>
+    <button class="btn-fn" onclick="calcFn('cos')">cos</button>
+    <button class="btn-fn" onclick="calcFn('tan')">tan</button>
+    <button class="btn-fn" onclick="calcFn('log')">log</button>
+    <button class="btn-fn" onclick="calcFn('ln')">ln</button>
+    <!-- Row 2 -->
+    <button class="btn-fn" onclick="calcFn('sqrt')">√x</button>
+    <button class="btn-fn" onclick="calcFn('square')">x²</button>
+    <button class="btn-fn" onclick="calcFn('cube')">x³</button>
+    <button class="btn-fn" onclick="insertVal('Math.PI')">π</button>
+    <button class="btn-fn" onclick="insertVal('Math.E')">e</button>
+    <!-- Row 3 -->
+    <button class="btn-fn" onclick="insertVal('(')">(</button>
+    <button class="btn-fn" onclick="insertVal(')')">)</button>
+    <button class="btn-fn" onclick="calcFn('fact')">n!</button>
+    <button class="btn-fn" onclick="calcFn('percent')">%</button>
+    <button class="btn-clr" onclick="clearAll()">AC</button>
+    <!-- Row 4 -->
+    <button class="btn-num" onclick="insertVal('7')">7</button>
+    <button class="btn-num" onclick="insertVal('8')">8</button>
+    <button class="btn-num" onclick="insertVal('9')">9</button>
+    <button class="btn-op" onclick="insertVal('/')">÷</button>
+    <button class="btn-op" onclick="deleteLast()">⌫</button>
+    <!-- Row 5 -->
+    <button class="btn-num" onclick="insertVal('4')">4</button>
+    <button class="btn-num" onclick="insertVal('5')">5</button>
+    <button class="btn-num" onclick="insertVal('6')">6</button>
+    <button class="btn-op" onclick="insertVal('*')">×</button>
+    <button class="btn-fn" onclick="insertVal('**')">xʸ</button>
+    <!-- Row 6 -->
+    <button class="btn-num" onclick="insertVal('1')">1</button>
+    <button class="btn-num" onclick="insertVal('2')">2</button>
+    <button class="btn-num" onclick="insertVal('3')">3</button>
+    <button class="btn-op" onclick="insertVal('+')">+</button>
+    <button class="btn-op" onclick="insertVal('-')">−</button>
+    <!-- Row 7 -->
+    <button class="btn-fn" onclick="toggleSign()">+/-</button>
+    <button class="btn-num btn-wide" onclick="insertVal('0')">0</button>
+    <button class="btn-num" onclick="insertVal('.')">.</button>
+    <button class="btn-eq" onclick="calculate()">=</button>
+  </div>
+</div>
+
+<!-- SETUP PASSWORD -->
+<div class="overlay" id="setupView">
+  <h2>🔒 Password Haaraa Uumi</h2>
+  <p>Lakkoofsa 4+ galchi — kun vault kee banuu fayyadama</p>
+  <div class="pin-display" id="setupDisplay">_</div>
+  <div class="pin-pad">
+    <button onclick="pinPress('setup','1')">1</button>
+    <button onclick="pinPress('setup','2')">2</button>
+    <button onclick="pinPress('setup','3')">3</button>
+    <button onclick="pinPress('setup','4')">4</button>
+    <button onclick="pinPress('setup','5')">5</button>
+    <button onclick="pinPress('setup','6')">6</button>
+    <button onclick="pinPress('setup','7')">7</button>
+    <button onclick="pinPress('setup','8')">8</button>
+    <button onclick="pinPress('setup','9')">9</button>
+    <button onclick="pinPress('setup','del')">⌫</button>
+    <button onclick="pinPress('setup','0')">0</button>
+    <button onclick="pinPress('setup','ok')">✓</button>
+  </div>
+</div>
+
+<!-- ENTER PASSWORD -->
+<div class="overlay" id="enterView">
+  <h2>🔒 Password Galchi</h2>
+  <p>Vault banuf password kee galchi</p>
+  <div class="pin-display" id="enterDisplay">_</div>
+  <div class="pin-pad">
+    <button onclick="pinPress('enter','1')">1</button>
+    <button onclick="pinPress('enter','2')">2</button>
+    <button onclick="pinPress('enter','3')">3</button>
+    <button onclick="pinPress('enter','4')">4</button>
+    <button onclick="pinPress('enter','5')">5</button>
+    <button onclick="pinPress('enter','6')">6</button>
+    <button onclick="pinPress('enter','7')">7</button>
+    <button onclick="pinPress('enter','8')">8</button>
+    <button onclick="pinPress('enter','9')">9</button>
+    <button onclick="pinPress('enter','del')">⌫</button>
+    <button onclick="pinPress('enter','0')">0</button>
+    <button onclick="pinPress('enter','ok')">✓</button>
+  </div>
+  <button class="pin-back" onclick="closeEnter()">Deebi'i</button>
+</div>
+
+<!-- VAULT -->
+<div class="vault" id="vaultView">
+  <h2>🔒 Vault Koo</h2>
+  <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="addFiles(this)">
+  <button class="upload-btn" onclick="document.getElementById('fileInput').click()">📁 Photo/Video Ida'i</button>
+  <div class="vault-grid" id="vaultGrid"></div>
+  <button class="close-vault-btn" onclick="closeVault()">✕ Cufii</button>
+</div>
+
+<script>
+let expression = '';
+let typed = '';
+let setupPin = '';
+let enterPin = '';
+
+// Load saved vault files
+window.onload = function() {
+  loadVaultFiles();
+};
+
+// Save & load vault using IndexedDB
+let db;
+const DB_NAME = 'VaultDB';
+const STORE_NAME = 'files';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore(STORE_NAME, {keyPath:'id', autoIncrement:true});
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = e => reject(e);
+  });
+}
+
+async function saveFile(blob, type) {
+  const d = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = d.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).add({blob, type});
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
+  });
+}
+
+async function getAllFiles() {
+  const d = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = d.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = reject;
+  });
+}
+
+async function deleteFile(id) {
+  const d = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = d.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
+  });
+}
+
+async function loadVaultFiles() {
+  const grid = document.getElementById('vaultGrid');
+  grid.innerHTML = '';
+  const files = await getAllFiles();
+  files.forEach(f => addToGrid(f.blob, f.type, f.id));
+}
+
+function addToGrid(blob, type, id) {
+  const grid = document.getElementById('vaultGrid');
+  const url = URL.createObjectURL(blob);
+  const div = document.createElement('div');
+  div.className = 'vault-item';
+  div.dataset.id = id;
+  let el;
+  if(type.startsWith('image/')) {
+    el = document.createElement('img');
+  } else {
+    el = document.createElement('video');
+    el.controls = true;
+  }
+  el.src = url;
+  const delBtn = document.createElement('button');
+  delBtn.className = 'del-btn';
+  delBtn.textContent = '✕';
+  delBtn.onclick = async () => {
+    await deleteFile(id);
+    div.remove();
+  };
+  div.appendChild(el);
+  div.appendChild(delBtn);
+  grid.appendChild(div);
+}
+
+async function addFiles(input) {
+  for(const file of Array.from(input.files)) {
+    await saveFile(file, file.type);
+  }
+  await loadVaultFiles();
+}
+
+// PASSWORD LOGIC
+function getVaultPin() {
+  return localStorage.getItem('vaultPin');
+}
+
+function checkSecret() {
+  const pin = getVaultPin();
+  const trigger = pin ? pin + '=' : '1234=';
+  if(typed.endsWith(trigger)) {
+    typed = '';
+    expression = '';
+    document.getElementById('result').textContent = '0';
+    document.getElementById('expression').textContent = '';
+    if(!pin) {
+      document.getElementById('setupView').classList.add('open');
+    } else {
+      document.getElementById('enterView').classList.add('open');
+    }
+  }
+  if(typed.length > 20) typed = typed.slice(-20);
+}
+
+function pinPress(mode, val) {
+  if(mode === 'setup') {
+    if(val === 'del') {
+      setupPin = setupPin.slice(0,-1);
+    } else if(val === 'ok') {
+      if(setupPin.length >= 4) {
+        localStorage.setItem('vaultPin', setupPin);
+        document.getElementById('setupView').classList.remove('open');
+        loadVaultFiles();
+        document.getElementById('vaultView').classList.add('open');
+        setupPin = '';
+      } else {
+        document.getElementById('setupDisplay').textContent = '❌ 4+';
+        setTimeout(()=>{ document.getElementById('setupDisplay').textContent = setupPin ? '●'.repeat(setupPin.length) : '_'; }, 1000);
+      }
+      return;
+    } else {
+      setupPin += val;
+    }
+    document.getElementById('setupDisplay').textContent = setupPin ? '●'.repeat(setupPin.length) : '_';
+  }
+
+  if(mode === 'enter') {
+    if(val === 'del') {
+      enterPin = enterPin.slice(0,-1);
+    } else if(val === 'ok') {
+      if(enterPin === getVaultPin()) {
+        document.getElementById('enterView').classList.remove('open');
+        loadVaultFiles();
+        document.getElementById('vaultView').classList.add('open');
+        enterPin = '';
+      } else {
+        document.getElementById('enterDisplay').textContent = '❌';
+        enterPin = '';
+        setTimeout(()=>{ document.getElementById('enterDisplay').textContent = '_'; }, 1000);
+      }
+      return;
+    } else {
+      enterPin += val;
+    }
+    document.getElementById('enterDisplay').textContent = enterPin ? '●'.repeat(enterPin.length) : '_';
+  }
+}
+
+function closeEnter() {
+  document.getElementById('enterView').classList.remove('open');
+  enterPin = '';
+}
+
+function closeVault() {
+  document.getElementById('vaultView').classList.remove('open');
+}
+
+// CALCULATOR LOGIC
+function updateDisplay() {
+  document.getElementById('expression').textContent = expression
+    .replace(/Math\.PI/g,'π').replace(/Math\.E/g,'e')
+    .replace(/\*\*/g,'ˆ').replace(/\*/g,'×').replace(/\//g,'÷');
+}
+
+function insertVal(val) {
+  expression += val;
+  typed += val;
+  checkSecret();
+  updateDisplay();
+  document.getElementById('result').textContent = expression
+    .replace(/Math\.PI/g,'π').replace(/Math\.E/g,'e')
+    .replace(/\*\*/g,'ˆ').replace(/\*/g,'×').replace(/\//g,'÷');
+}
+
+function factorial(n) {
+  n = Math.floor(n);
+  if(n < 0) return NaN;
+  if(n === 0 || n === 1) return 1;
+  let r = 1;
+  for(let i = 2; i <= n; i++) r *= i;
+  return r;
+}
+
+function calcFn(fn) {
+  let num = parseFloat(expression) || 0;
+  let res;
+  switch(fn) {
+    case 'sin': res = Math.sin(num * Math.PI / 180); break;
+    case 'cos': res = Math.cos(num * Math.PI / 180); break;
+    case 'tan': res = Math.tan(num * Math.PI / 180); break;
+    case 'log': res = Math.log10(num); break;
+    case 'ln': res = Math.log(num); break;
+    case 'sqrt': res = Math.sqrt(num); break;
+    case 'square': res = num * num; break;
+    case 'cube': res = num * num * num; break;
+    case 'percent': res = num / 100; break;
+    case 'fact': res = factorial(num); break;
+  }
+  if(res === undefined || isNaN(res)) {
+    document.getElementById('result').textContent = 'Dogoggora!';
+    expression = '';
+    return;
+  }
+  expression = String(parseFloat(res.toFixed(10)));
+  updateDisplay();
+  document.getElementById('result').textContent = expression;
+}
+
+function toggleSign() {
+  if(expression.startsWith('-')) {
+    expression = expression.slice(1);
+  } else {
+    expression = '-' + expression;
+  }
+  updateDisplay();
+}
+
+function calculate() {
+  typed += '=';
+  checkSecret();
+  if(document.getElementById('vaultView').classList.contains('open') ||
+     document.getElementById('enterView').classList.contains('open') ||
+     document.getElementById('setupView').classList.contains('open')) return;
+  try {
+    let expr = expression.replace(/÷/g,'/').replace(/×/g,'*');
+    let res = eval(expr);
+    document.getElementById('expression').textContent = expression
+      .replace(/Math\.PI/g,'π').replace(/Math\.E/g,'e') + ' =';
+    expression = String(parseFloat(res.toFixed(10)));
+    document.getElementById('result').textContent = expression;
+  } catch(e) {
+    document.getElementById('result').textContent = 'Dogoggora!';
+    expression = '';
+  }
+}
+
+function clearAll() {
+  expression = '';
+  typed = '';
+  document.getElementById('expression').textContent = '';
+  document.getElementById('result').textContent = '0';
+}
+
+function deleteLast() {
+  expression = expression.slice(0,-1);
+  updateDisplay();
+  document.getElementById('result').textContent = expression || '0';
+}
+</script>
+</body>
+  </html>
